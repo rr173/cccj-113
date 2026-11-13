@@ -15,11 +15,17 @@ mes_pipeline/
 ├── state_machine.py   # 独立小型状态机：逐行解释轨迹、悬空操作、违规、等待样本
 ├── analysis.py        # DFG/变体/分位数/违规表 + PM4Py 适配器与双路交叉核对
 ├── pipeline.py        # 门面：导入/封存/重算/查询四入口 + 版本化报告
-└── cli.py             # 命令行入口
+├── cli.py             # 命令行入口（流程分析 + 配料计算）
+└── charge/            # 配料计算（与 MES 活动轨迹无关，只用质量/数量数据）
+    ├── models.py      # 库存批/化验区间/炉次要求等值对象，pct/ppm 统一为质量分数
+    ├── io.py          # 输入读取与校验：缺证书/冲突/负数/单位不明/缺化验一律拒绝
+    ├── solver.py      # 纯 Python 两阶段单纯形 + 分支定界 MILP + 冲突约束集(IIS)
+    └── service.py     # 建模求解、保守口径核算、结果落盘与读取
 synthetic/
 ├── generate.py        # 确定性人工合成材料（覆盖九类场景）
 └── audit_demo.py      # 状态机逐行审计演示
-tests/                 # 32 个测试（状态机单测 + 关联单测 + 端到端）
+charge_demo/           # 配料计算演示材料（七个场景）+ 独立复核脚本 verify.py
+tests/                 # 85 个测试（状态机/关联/端到端 + 配料 io/求解器/端到端）
 ```
 
 ## 2. 关键业务规则的落地方式
@@ -47,7 +53,7 @@ tests/                 # 32 个测试（状态机单测 + 关联单测 + 端到�
 python3 -m venv .venv --without-pip          # 系统无 ensurepip 时
 .venv/bin/python get-pip.py
 .venv/bin/python -m pip install -e . pytest
-.venv/bin/python -I -m pytest tests/ -q      # 32 passed
+.venv/bin/python -I -m pytest tests/ -q      # 85 passed
 ```
 
 `-I` 隔离模式下仍可导入，因为项目以 editable 方式安装（pth 位于 site-packages）。
@@ -84,7 +90,43 @@ done
 Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 `import_package / seal / create_sealed_set / recompute / read_report / query_trace`。
 
-## 5. 合成材料覆盖的九类场景
+## 5. 配料计算（charge）
+
+在**开炉前**根据原料库存、化验结果与炉次要求求最低成本投料方案。求解输入只有
+质量/数量数据（库存表、化验表、证书登记表、炉次要求），**不使用 MES 活动轨迹**。
+
+```bash
+# 求解（退出码：0 最优 / 3 约束无解 / 4 输入不合法 / 5 未收敛）
+.venv/bin/python -I -m mes_pipeline.cli --store data/store charge-solve \
+    --inventory charge_demo/s1_bulk_optimum/inventory.csv \
+    --assays    charge_demo/s1_bulk_optimum/assays.csv \
+    --certs     charge_demo/s1_bulk_optimum/certificates.csv \
+    --heat      charge_demo/s1_bulk_optimum/heat.json \
+    --calc-id demo-s1
+
+# 查看某次计算结果（成功与失败结果都会落盘，均可读取）
+.venv/bin/python -I -m mes_pipeline.cli --store data/store charge-show --calc-id demo-s1
+```
+
+计算口径：
+
+- 散装批按连续重量取用；整桶批必须整桶（净重整数倍），不足一桶的库存不可用；
+- 化验值一律按闭区间处理：单值 `[v,v]`、上下界 `[lo,hi]`、`<x` 为 `[0,x]`（不取中点）；
+  pct 与 ppm 统一为质量分数后求解；
+- 成分不确定性按保守口径：最低含量用各原料下界核算、最高含量用上界核算，
+  保证区间内任何真实成分都不突破炉次要求，不把区间收缩成平均数；
+- 缺证书、同批同元素相互冲突的有效结果、负数、单位不明、受约束元素缺化验
+  一律拒绝计算（`INVALID_INPUT`），缺值不按零填充；
+- 库存上限、整桶整数约束、互斥关系与质量守恒同时满足；目标为总投料费用最小，
+  多最优时给出各批次在最优费用下的投料区间说明等价性；
+- 无可行方案时输出极小冲突约束集（整体不可行、移除任意一条即可行，
+  可用 `charge_demo/verify.py verify-iis` 重新求解逐条验证），不自动放宽限制。
+
+求解器为自研纯 Python（两阶段单纯形 + 分支定界），**不新增运行时第三方依赖**；
+正确性另有 scipy/穷举对照（开发期一次性验证，不进交付依赖）。
+演示材料与计算口径详见 `charge_demo/README.md`。
+
+## 6. 合成材料覆盖的九类场景
 
 1. 缺失交接条码（`B-MISS`）与同产线歧义条码（`B-AMB1/B-AMB2` 共用 `BC-DUP`）
 2. OPEN 没有 CLOSE（`B-DANGLE` 的 CUT）
@@ -96,7 +138,7 @@ Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 8. 撤回一条中间事件（`WD-0001` 撤回 `B-WD` 的 CUT CLOSE，CUT OPEN 随之变悬空）
 9. 条码修正引发批次拆分（`BCFIX-0001` 后 `B-SPLIT` 与 `X-SPLIT2` 分离为两个合成批次）
 
-## 6. PM4Py 与状态机的核对关系
+## 7. PM4Py 与状态机的核对关系
 
 - `analysis.build_pm4py_dataframe` 把批次事件展平为 PM4Py 事件表
   （`case_id/activity/timestamp`），`convert_to_event_log` 后用 DFG discovery 与

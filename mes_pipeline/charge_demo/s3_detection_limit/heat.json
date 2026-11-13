@@ -1,0 +1,8 @@
+{
+  "heat_id": "H-S3",
+  "total_mass_kg": 100,
+  "elements": {
+    "Pb": {"max_ppm": 15}
+  },
+  "mutex": []
+}

@@ -1,0 +1,4 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-FE-A,铬铁A,bulk,600,6.0,
+LOT-FE-B,铬铁B,bulk,600,4.0,
+LOT-FE-C,铬铁C,bulk,400,5.5,

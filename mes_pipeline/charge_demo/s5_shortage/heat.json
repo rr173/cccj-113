@@ -1,0 +1,8 @@
+{
+  "heat_id": "H-S5",
+  "total_mass_kg": 500,
+  "elements": {
+    "Cr": {"min_pct": 10.0}
+  },
+  "mutex": []
+}

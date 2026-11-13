@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["mes_pipeline", "synthetic"]
+packages = ["mes_pipeline", "mes_pipeline.charge", "synthetic"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

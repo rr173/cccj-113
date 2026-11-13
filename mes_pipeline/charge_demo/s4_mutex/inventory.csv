@@ -1,0 +1,4 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-MX-1,供应商甲铬铁,bulk,50,3.0,
+LOT-MX-2,供应商乙铬铁,bulk,100,3.5,
+LOT-MX-3,高铬精料,bulk,100,7.0,

@@ -1,0 +1,4 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-U-1,铬铁U1,bulk,200,5.0,
+LOT-U-2,铬铁U2,bulk,200,4.0,
+LOT-U-3,铬铁U3,bulk,100,7.0,

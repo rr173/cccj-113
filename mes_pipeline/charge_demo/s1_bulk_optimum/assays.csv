@@ -1,0 +1,7 @@
+lot_id,element,cert_id,unit,value_type,value,lower,upper
+LOT-FE-A,Cr,CERT-A-01,pct,single,20.0,,
+LOT-FE-A,Pb,CERT-A-01,ppm,single,10,,
+LOT-FE-B,Cr,CERT-B-01,pct,single,16.0,,
+LOT-FE-B,Pb,CERT-B-01,ppm,single,20,,
+LOT-FE-C,Cr,CERT-C-01,pct,single,18.0,,
+LOT-FE-C,Pb,CERT-C-01,ppm,single,5,,

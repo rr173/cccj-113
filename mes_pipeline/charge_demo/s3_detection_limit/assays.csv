@@ -1,0 +1,3 @@
+lot_id,element,cert_id,unit,value_type,value,lower,upper
+LOT-PB-A,Pb,CERT-PA-01,ppm,limit,,,20
+LOT-PB-B,Pb,CERT-PB-01,ppm,single,5,,

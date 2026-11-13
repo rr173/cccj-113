@@ -1,0 +1,4 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-DRUM-1,桶装铬铁1,drum,215,3.0,40
+LOT-DRUM-2,桶装铬铁2,drum,190,2.0,25
+LOT-BULK-1,散装铬铁,bulk,300,8.0,

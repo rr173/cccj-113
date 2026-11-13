@@ -1,0 +1,8 @@
+{
+  "heat_id": "H-S4",
+  "total_mass_kg": 100,
+  "elements": {
+    "Cr": {"min_pct": 12.0}
+  },
+  "mutex": [["LOT-MX-1", "LOT-MX-2"]]
+}

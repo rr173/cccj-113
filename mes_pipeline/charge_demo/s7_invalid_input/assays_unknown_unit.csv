@@ -1,0 +1,3 @@
+lot_id,element,cert_id,unit,value_type,value,lower,upper
+LOT-V-1,Cr,CERT-V-1,ppb,single,18.0,,
+LOT-V-2,Cr,CERT-V-2,pct,single,20.0,,

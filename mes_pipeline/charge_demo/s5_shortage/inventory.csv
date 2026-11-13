@@ -1,0 +1,4 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-S-1,散装料1,bulk,200,4.0,
+LOT-S-2,散装料2,bulk,150,5.0,
+LOT-S-3,桶装料,drum,120,6.0,50

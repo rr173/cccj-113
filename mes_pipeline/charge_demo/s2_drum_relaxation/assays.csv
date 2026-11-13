@@ -1,0 +1,4 @@
+lot_id,element,cert_id,unit,value_type,value,lower,upper
+LOT-DRUM-1,Cr,CERT-D1-01,pct,single,18.0,,
+LOT-DRUM-2,Cr,CERT-D2-01,pct,single,10.0,,
+LOT-BULK-1,Cr,CERT-B1-01,pct,single,30.0,,

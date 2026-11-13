@@ -1,0 +1,3 @@
+lot_id,material,mode,available_kg,price_per_kg,drum_net_kg
+LOT-PB-A,低价回炉料,bulk,100,2.0,
+LOT-PB-B,精料,bulk,30,6.0,

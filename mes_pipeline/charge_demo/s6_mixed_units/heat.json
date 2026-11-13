@@ -1,0 +1,9 @@
+{
+  "heat_id": "H-S6",
+  "total_mass_kg": 300,
+  "elements": {
+    "Cr": {"min_pct": 18.0},
+    "Pb": {"max_ppm": 10}
+  },
+  "mutex": []
+}

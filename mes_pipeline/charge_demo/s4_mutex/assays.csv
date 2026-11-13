@@ -1,0 +1,4 @@
+lot_id,element,cert_id,unit,value_type,value,lower,upper
+LOT-MX-1,Cr,CERT-M1-01,pct,single,15.0,,
+LOT-MX-2,Cr,CERT-M2-01,pct,single,18.0,,
+LOT-MX-3,Cr,CERT-M3-01,pct,single,30.0,,

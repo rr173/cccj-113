@@ -1,4 +1,4 @@
-"""命令行入口：导入、封存、重算、轨迹查询。
+"""命令行入口：导入、封存、重算、轨迹查询、配料计算。
 
 示例
 ----
@@ -10,6 +10,11 @@ python -m mes_pipeline.cli query    --config config.json --store ./store --set-i
     --batch SB-xxxx
 python -m mes_pipeline.cli query    --config config.json --store ./store --set-id S1 \\
     --line LINE-A --label B-REWORK
+
+配料计算（输入为原料库存/化验/证书/炉次要求，与 MES 活动轨迹无关）：
+python -m mes_pipeline.cli charge-solve --store ./store \\
+    --inventory inv.csv --assays assays.csv --certs certs.csv --heat heat.json
+python -m mes_pipeline.cli charge-show --store ./store --calc-id <calc_id>
 """
 from __future__ import annotations
 
@@ -22,6 +27,9 @@ from .pipeline import Pipeline
 
 
 def _build(args: argparse.Namespace) -> Pipeline:
+    if not args.config:
+        print("该命令需要 --config", file=sys.stderr)
+        raise SystemExit(2)
     config = PipelineConfig.load(args.config)
     return Pipeline(config, args.store)
 
@@ -89,10 +97,50 @@ def cmd_query(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# 配料计算
+# --------------------------------------------------------------------------- #
+# 退出码：0 最优 / 3 约束无解 / 4 输入不合法 / 5 求解未收敛
+_CHARGE_EXIT = {
+    "OPTIMAL": 0,
+    "INFEASIBLE": 3,
+    "INVALID_INPUT": 4,
+    "NODE_LIMIT_EXCEEDED": 5,
+}
+
+
+def cmd_charge_solve(args: argparse.Namespace) -> int:
+    from .charge import service  # 延迟导入，保持主管线启动轻量
+
+    result = service.solve_charge(
+        inventory=args.inventory,
+        assays=args.assays,
+        certificates=args.certs,
+        heat=args.heat,
+        store_dir=args.store,
+        calc_id=args.calc_id,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _CHARGE_EXIT.get(result["status"], 1)
+
+
+def cmd_charge_show(args: argparse.Namespace) -> int:
+    from .charge import service
+
+    try:
+        result = service.load_result(args.store, args.calc_id)
+    except KeyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _CHARGE_EXIT.get(result.get("status"), 0)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mes_pipeline", description="MES 流程分析管线")
-    parser.add_argument("--config", required=True, help="管线配置 JSON（时钟 + 工艺规范）")
-    parser.add_argument("--store", required=True, help="封存库目录")
+    parser.add_argument("--config", default=None,
+                        help="管线配置 JSON（时钟 + 工艺规范）；配料计算命令不需要")
+    parser.add_argument("--store", default="store", help="封存库目录（默认 ./store）")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_imp = sub.add_parser("import", help="只读解析导出包")
@@ -126,6 +174,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_q.add_argument("--label", default=None, help="产线内 batch_label")
     p_q.add_argument("--version", default=None)
     p_q.set_defaults(func=cmd_query)
+
+    p_cs = sub.add_parser("charge-solve", help="配料计算：读取库存/化验/证书/炉次要求并求解")
+    p_cs.add_argument("--inventory", required=True, help="原料库存表 CSV")
+    p_cs.add_argument("--assays", required=True, help="化验结果表 CSV")
+    p_cs.add_argument("--certs", required=True, help="证书登记表 CSV")
+    p_cs.add_argument("--heat", required=True, help="炉次要求 JSON")
+    p_cs.add_argument("--calc-id", default=None, help="可选：指定本次计算 ID")
+    p_cs.set_defaults(func=cmd_charge_solve)
+
+    p_ch = sub.add_parser("charge-show", help="查看某次配料计算结果")
+    p_ch.add_argument("--calc-id", required=True)
+    p_ch.set_defaults(func=cmd_charge_show)
     return parser
 
 
