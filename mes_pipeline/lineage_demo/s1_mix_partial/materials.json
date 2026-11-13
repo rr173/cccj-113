@@ -1,0 +1,6 @@
+{
+  "batches": [
+    {"batch_id": "RM-A", "material": "树脂A", "initial_mass": {"mass": "10", "unit": "kg"}},
+    {"batch_id": "RM-B", "material": "固化剂B", "initial_mass": {"mass": "5000", "unit": "g"}}
+  ]
+}

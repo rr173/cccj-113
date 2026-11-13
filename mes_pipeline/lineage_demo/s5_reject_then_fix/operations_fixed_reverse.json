@@ -1,0 +1,24 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-STEP2",
+      "inputs": [
+        {"batch_id": "H-1", "mass": "4", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "H-2", "mass": "4", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    },
+    {
+      "operation_id": "OP-STEP1",
+      "inputs": [
+        {"batch_id": "RM-X", "mass": "4", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "H-1", "mass": "4", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

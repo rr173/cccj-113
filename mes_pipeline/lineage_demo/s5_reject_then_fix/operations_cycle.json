@@ -1,0 +1,24 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-CYC-A",
+      "inputs": [
+        {"batch_id": "CYC-B", "mass": "2", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "CYC-A", "mass": "2", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    },
+    {
+      "operation_id": "OP-CYC-B",
+      "inputs": [
+        {"batch_id": "CYC-A", "mass": "2", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "CYC-B", "mass": "2", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

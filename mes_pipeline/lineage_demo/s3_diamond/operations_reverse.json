@@ -1,0 +1,46 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-MERGE",
+      "inputs": [
+        {"batch_id": "D-1", "mass": "4", "unit": "kg"},
+        {"batch_id": "D-2", "mass": "3", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "F-1", "mass": "7", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    },
+    {
+      "operation_id": "OP-BRANCH2",
+      "inputs": [
+        {"batch_id": "M-1", "mass": "6", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "D-2", "mass": "3", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "3", "unit": "kg"}
+    },
+    {
+      "operation_id": "OP-BRANCH1",
+      "inputs": [
+        {"batch_id": "M-1", "mass": "8", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "D-1", "mass": "4", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "4", "unit": "kg"}
+    },
+    {
+      "operation_id": "OP-MIX",
+      "inputs": [
+        {"batch_id": "RM-X", "mass": "10", "unit": "kg"},
+        {"batch_id": "RM-Y", "mass": "6", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "M-1", "mass": "16", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-UNBALANCED",
+      "inputs": [
+        {"batch_id": "RM-X", "mass": "10", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "U-1", "mass": "9", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

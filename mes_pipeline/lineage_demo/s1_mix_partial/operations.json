@@ -1,0 +1,15 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-MIX",
+      "inputs": [
+        {"batch_id": "RM-A", "mass": "6", "unit": "kg"},
+        {"batch_id": "RM-B", "mass": "2000", "unit": "g"}
+      ],
+      "outputs": [
+        {"batch_id": "M-1", "mass": "8", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

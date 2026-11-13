@@ -1,0 +1,15 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-OVERDRAW",
+      "inputs": [
+        {"batch_id": "RM-X", "mass": "10", "unit": "kg"},
+        {"batch_id": "RM-Y", "mass": "6001", "unit": "g"}
+      ],
+      "outputs": [
+        {"batch_id": "O-1", "mass": "16001", "unit": "g"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

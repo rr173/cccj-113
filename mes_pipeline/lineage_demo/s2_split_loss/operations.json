@@ -1,0 +1,15 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-SPLIT",
+      "inputs": [
+        {"batch_id": "RM-C", "mass": "10", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "P-1", "mass": "3", "unit": "kg"},
+        {"batch_id": "P-2", "mass": "2500", "unit": "g"}
+      ],
+      "loss_mass": {"mass": "4.5", "unit": "kg"}
+    }
+  ]
+}

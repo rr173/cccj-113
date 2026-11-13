@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["mes_pipeline", "mes_pipeline.charge", "mes_pipeline.gage", "synthetic"]
+packages = ["mes_pipeline", "mes_pipeline.charge", "mes_pipeline.gage", "mes_pipeline.lineage", "synthetic"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

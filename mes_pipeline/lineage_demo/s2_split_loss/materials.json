@@ -1,0 +1,5 @@
+{
+  "batches": [
+    {"batch_id": "RM-C", "material": "基料C", "initial_mass": {"mass": "10", "unit": "kg"}}
+  ]
+}

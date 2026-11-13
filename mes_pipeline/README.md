@@ -26,12 +26,18 @@ mes_pipeline/
     ├── io.py          # 输入校验：重复行/未声明/缺格/非有限/单位不兼容均拒绝
     ├── anova.py       # 随机效应双因素 ANOVA（带交互）+ 方差分量 + GRR 指标
     └── service.py     # 载入试验、计算、结果落盘与读取
+└── lineage/           # 实耗批次谱系（只用外购批声明与实际领料/产出记录；纯标准库）
+    ├── models.py      # 质量值对象（Fraction 精确算术，g/kg 内部统一为克）
+    ├── io.py          # 装载校验：引用/重复/守恒/成环/累计超领定位到原记录后整体拒绝
+    ├── engine.py      # 拓扑排序、均匀混合传播、路径留痕、余额、召回、全局账
+    └── service.py     # 装载、精确序列化、结果落盘/读取、构成查询与召回测算
 synthetic/
 ├── generate.py        # 确定性人工合成材料（覆盖九类场景）
 └── audit_demo.py      # 状态机逐行审计演示
 charge_demo/           # 配料计算演示材料（七个场景）+ 独立复核脚本 verify.py
 grr_demo/              # 量具 R&R 演示材料（六个场景）+ 独立复核脚本 verify.py
-tests/                 # 129 个测试（状态机/关联/端到端 + 配料 + 量具 R&R）
+lineage_demo/          # 实耗批次谱系演示材料（五个场景）+ 独立复核脚本 verify.py
+tests/                 # 状态机/关联/端到端 + 配料 + 量具 R&R + 谱系测试
 ```
 
 ## 2. 关键业务规则的落地方式
@@ -164,7 +170,53 @@ Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 演示材料、手工演算与独立复核（`grr_demo/verify.py`，不调用生产分析函数）
 详见 `grr_demo/README.md`。
 
-## 7. 合成材料覆盖的九类场景
+## 7. 实耗批次谱系（lineage）
+
+供应商通知某批原料有问题时，本模块回答“它已经混进哪些**在库物料**、各还剩
+多少”，而不是只给一串相连批次号。输入只有两份**实际记录**——外购原料批
+声明（批次、物料、初始质量）与加工操作（operation_id、实耗输入批及质量、
+新产出批及质量、损耗质量）。**不从 MES 工序轨迹、配料建议或量具试验推测
+实际用料**；子系统为纯标准库实现，无新增第三方依赖。
+
+```bash
+S=/tmp/line_store
+# 装载并计算（退出码 0 成功 / 4 输入不合法；失败也落盘为 INVALID_INPUT）
+python3 -I -m mes_pipeline.cli --store $S lineage-load \
+    --materials lineage_demo/s3_diamond/materials.json \
+    --operations lineage_demo/s3_diamond/operations_reverse.json \
+    --calc-id demo-s3
+# 构成查询：任何已知批的生成/剩余质量与按外购批拆分的构成（含流经操作路径）
+python3 -I -m mes_pipeline.cli --store $S lineage-composition \
+    --calc-id demo-s3 --batch F-1
+# 召回测算：多个可疑外购批，输出只列正余额且含可疑原料的在库批
+python3 -I -m mes_pipeline.cli --store $S lineage-recall \
+    --calc-id demo-s3 --suspect RM-X --suspect RM-Y
+```
+
+计算口径：
+
+- 全部质量以有理数（`fractions.Fraction`）精确运算，单位支持 g/kg 混写；
+  质量守恒与累计超领判定**无浮点容差**，超领一克也会被定位拒绝，非整数
+  JSON 浮点输入直接拒绝（要求十进制字符串）；
+- 记录顺序不代表加工顺序：先按生产者/消费者建操作依赖图、拓扑排序后计算；
+  引用不存在的批、同批在一次操作内重复列出、重复 operation_id/产出批双
+  生产者、覆盖外购批、循环依赖、累计超领都定位到原记录并**整体拒绝**本次
+  装载，不跳过坏操作继续给谱系；修正文件后可重新装载，旧结果仍可查询；
+- **理想均匀混合假设**：批内组成处处相同，部分领用按各原料占比分摊；同一
+  操作的各产出与损耗按全部投入的混合组成等比例分配，损耗只减量不选择性
+  去除原料；未领用部分保持原组成；
+- 菱形路径上同一原料沿各支的贡献**相加**，每条贡献保留完整批链/操作链
+  路径依据，不去重丢支、不把整支祖先量重复算两遍；
+- 召回逐批给出可用质量、可疑原料质量与占比、应隔离的整批质量及路径依据；
+  完全耗尽的中间批不计入隔离总量，同批含多种可疑原料只隔离一次；并按可疑
+  原料核对“初始质量 = 所有批剩余贡献 + 累计损耗贡献”的全局账；
+- 除不尽的占比展示为 28 位小数（HALF_UP）并附精确分数字段与
+  `all_decimals_exact` 标志，内部核算始终精确。
+
+演示材料、手工数值演算与独立复核（`lineage_demo/verify.py`，不调用生产
+分析函数，用独立的 Fraction 参考实现逐项核对）详见 `lineage_demo/README.md`。
+
+## 8. 合成材料覆盖的九类场景
 
 1. 缺失交接条码（`B-MISS`）与同产线歧义条码（`B-AMB1/B-AMB2` 共用 `BC-DUP`）
 2. OPEN 没有 CLOSE（`B-DANGLE` 的 CUT）
@@ -176,7 +228,7 @@ Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 8. 撤回一条中间事件（`WD-0001` 撤回 `B-WD` 的 CUT CLOSE，CUT OPEN 随之变悬空）
 9. 条码修正引发批次拆分（`BCFIX-0001` 后 `B-SPLIT` 与 `X-SPLIT2` 分离为两个合成批次）
 
-## 8. PM4Py 与状态机的核对关系
+## 9. PM4Py 与状态机的核对关系
 
 - `analysis.build_pm4py_dataframe` 把批次事件展平为 PM4Py 事件表
   （`case_id/activity/timestamp`），`convert_to_event_log` 后用 DFG discovery 与

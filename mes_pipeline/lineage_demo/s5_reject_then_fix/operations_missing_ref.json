@@ -1,0 +1,14 @@
+{
+  "operations": [
+    {
+      "operation_id": "OP-MISSING-REF",
+      "inputs": [
+        {"batch_id": "RM-GHOST", "mass": "5", "unit": "kg"}
+      ],
+      "outputs": [
+        {"batch_id": "G-1", "mass": "5", "unit": "kg"}
+      ],
+      "loss_mass": {"mass": "0", "unit": "g"}
+    }
+  ]
+}

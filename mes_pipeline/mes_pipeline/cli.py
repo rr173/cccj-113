@@ -20,6 +20,12 @@ python -m mes_pipeline.cli charge-show --store ./store --calc-id <calc_id>
 python -m mes_pipeline.cli grr-run --store ./store \\
     --study study.json --observations observations.csv --alpha 0.25
 python -m mes_pipeline.cli grr-show --store ./store --calc-id <calc_id>
+
+实耗批次谱系（只依据外购批声明与实际领料/产出记录，不从轨迹/配料/量具推测）：
+python -m mes_pipeline.cli lineage-load --store ./store \\
+    --materials materials.json --operations operations.json --calc-id <id>
+python -m mes_pipeline.cli lineage-composition --store ./store --calc-id <id> --batch B-1
+python -m mes_pipeline.cli lineage-recall --store ./store --calc-id <id> --suspect RM-X
 """
 from __future__ import annotations
 
@@ -179,6 +185,47 @@ def cmd_grr_show(args: argparse.Namespace) -> int:
     return _GRR_EXIT.get(result.get("status"), 0)
 
 
+# --------------------------------------------------------------------------- #
+# 实耗批次谱系（lineage；只依据外购批声明与实际领料/产出记录）
+# --------------------------------------------------------------------------- #
+# 退出码：0 装载/查询成功 / 2 结果或批次不存在 / 4 输入不合法
+def cmd_lineage_load(args: argparse.Namespace) -> int:
+    from .lineage import service
+
+    result = service.load_lineage(
+        materials=args.materials,
+        operations=args.operations,
+        store_dir=args.store,
+        calc_id=args.calc_id,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["status"] == service.STATUS_OK else 4
+
+
+def cmd_lineage_composition(args: argparse.Namespace) -> int:
+    from .lineage import service
+
+    try:
+        result = service.show_composition(args.store, args.calc_id, args.batch)
+    except (KeyError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_lineage_recall(args: argparse.Namespace) -> int:
+    from .lineage import service
+
+    try:
+        result = service.recall(args.store, args.calc_id, args.suspect)
+    except (KeyError, ValueError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mes_pipeline", description="MES 流程分析管线")
     parser.add_argument("--config", default=None,
@@ -241,6 +288,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_gs = sub.add_parser("grr-show", help="按试验 ID 查看某次量具 R&R 分析结果")
     p_gs.add_argument("--calc-id", required=True)
     p_gs.set_defaults(func=cmd_grr_show)
+
+    p_ll = sub.add_parser("lineage-load",
+                          help="实耗批次谱系：装载外购批声明与加工操作记录并计算")
+    p_ll.add_argument("--materials", required=True, help="外购原料批声明 JSON")
+    p_ll.add_argument("--operations", required=True, help="加工操作记录 JSON")
+    p_ll.add_argument("--calc-id", default=None, help="可选：指定本次计算 ID")
+    p_ll.set_defaults(func=cmd_lineage_load)
+
+    p_lc = sub.add_parser("lineage-composition",
+                          help="查看某已知批的生成/剩余质量与按外购批拆分的构成")
+    p_lc.add_argument("--calc-id", required=True)
+    p_lc.add_argument("--batch", required=True, help="要查询的批次 ID")
+    p_lc.set_defaults(func=cmd_lineage_composition)
+
+    p_lr = sub.add_parser("lineage-recall",
+                          help="对指定外购原料批发起在库召回测算")
+    p_lr.add_argument("--calc-id", required=True)
+    p_lr.add_argument("--suspect", action="append", required=True,
+                      help="可疑外购批 ID，可重复传入多个")
+    p_lr.set_defaults(func=cmd_lineage_recall)
     return parser
 
 
