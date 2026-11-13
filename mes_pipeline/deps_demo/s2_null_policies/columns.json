@@ -1,0 +1,11 @@
+{
+  "table_id": "s2_null_policies",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "grade",
+    "package",
+    "origin"
+  ]
+}

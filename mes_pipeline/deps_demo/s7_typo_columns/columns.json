@@ -1,0 +1,9 @@
+{
+  "table_id": "s7_typo_columns",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "part"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "table_id": "s1_composite_key",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "grade",
+    "package",
+    "origin"
+  ]
+}

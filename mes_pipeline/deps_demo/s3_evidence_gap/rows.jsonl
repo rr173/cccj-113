@@ -1,0 +1,7 @@
+{"row_id": "G-001", "values": {"supplier": "S1", "part": "P-01", "batch": "L1", "cert": null, "name": "轴承座"}}
+{"row_id": "G-002", "values": {"supplier": "S1", "part": "P-02", "batch": null, "cert": null, "name": "轴承座"}}
+{"row_id": "G-003", "values": {"supplier": "S2", "part": "P-03", "batch": null, "cert": null, "name": "端盖"}}
+{"row_id": "G-004", "values": {"supplier": "S2", "part": "P-04", "batch": null, "cert": null, "name": "端盖"}}
+{"row_id": "G-005", "values": {"supplier": "S3", "part": "P-05", "batch": null, "cert": "C-9", "name": "垫圈"}}
+{"row_id": "G-006", "values": {"supplier": "S3", "part": "P-06", "batch": null, "cert": null, "name": "垫圈"}}
+{"row_id": "G-007", "values": {"supplier": "S4", "part": "P-07", "batch": null, "cert": "C-10", "name": "卡簧"}}

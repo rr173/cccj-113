@@ -1,0 +1,9 @@
+{
+  "table_id": "s4_violation_to_hold",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "origin"
+  ]
+}

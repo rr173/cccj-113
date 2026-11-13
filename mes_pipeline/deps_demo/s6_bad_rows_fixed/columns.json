@@ -1,0 +1,11 @@
+{
+  "table_id": "s6_bad_rows_fixed",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "grade",
+    "package",
+    "origin"
+  ]
+}

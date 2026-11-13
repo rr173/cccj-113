@@ -1,0 +1,5 @@
+{"row_id": "D-001", "values": {"supplier": "S1", "part": "P-01", "name": "轴承座", "grade": "A", "package": "BOX-1", "origin": "CN"}}
+{"row_id": "D-002", "values": {"supplier": "S1", "part": "P-02", "name": "端盖", "grade": "A", "package": "BOX-1", "origin": "CN"}}
+{"row_id": "D-003", "values": {"supplier": "S2", "part": "P-03", "name": "轴套", "grade": "B", "package": "BOX-2", "origin": "CN"}}
+{"row_id": "D-004", "values": {"supplier": "S1", "part": "P-02", "name": "端盖", "grade": "A", "package": "BOX-1", "origin": "CN"}}
+{"row_id": "D-005", "values": {"supplier": "S3", "part": "P-04", "name": "垫圈", "grade": "C", "package": "BOX-3", "origin": "CN"}}

@@ -1,0 +1,5 @@
+{"row_id": "V-001", "values": {"supplier": "S1", "part": "P-01", "name": "轴承座", "origin": "CN"}}
+{"row_id": "V-002", "values": {"supplier": "S1", "part": "P-02", "name": "端盖", "origin": "CN"}}
+{"row_id": "V-003", "values": {"supplier": "S2", "part": "P-01", "name": "轴承座", "origin": "CN"}}
+{"row_id": "V-004", "values": {"supplier": "S2", "part": "P-03", "name": "轴套", "origin": "CN"}}
+{"row_id": "V-005", "values": {"supplier": "S3", "part": "P-04", "name": "垫圈", "origin": "CN"}}

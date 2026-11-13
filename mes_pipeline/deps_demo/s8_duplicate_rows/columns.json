@@ -1,0 +1,11 @@
+{
+  "table_id": "s8_duplicate_rows",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "grade",
+    "package",
+    "origin"
+  ]
+}

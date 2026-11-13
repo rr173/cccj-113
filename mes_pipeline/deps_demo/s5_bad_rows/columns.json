@@ -1,0 +1,11 @@
+{
+  "table_id": "s5_bad_rows",
+  "columns": [
+    "supplier",
+    "part",
+    "name",
+    "grade",
+    "package",
+    "origin"
+  ]
+}

@@ -26,12 +26,30 @@ python -m mes_pipeline.cli lineage-load --store ./store \\
     --materials materials.json --operations operations.json --calc-id <id>
 python -m mes_pipeline.cli lineage-composition --store ./store --calc-id <id> --batch B-1
 python -m mes_pipeline.cli lineage-recall --store ./store --calc-id <id> --suspect RM-X
+
+供应商属性宽表的依赖发现与规则核查（只研究一张表内字段值的对应关系）：
+python -m mes_pipeline.cli deps-discover --store ./store \
+    --columns deps_demo/s1/columns.json --rows deps_demo/s1/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy equal --calc-id demo-s1
+python -m mes_pipeline.cli deps-check --store ./store \
+    --columns deps_demo/s1/columns.json --rows deps_demo/s1/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy equal --key supplier --key part
+python -m mes_pipeline.cli deps-check --store ./store \
+    --columns deps_demo/s1/columns.json --rows deps_demo/s1/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy ignore --left supplier --right name
+python -m mes_pipeline.cli deps-explain --store ./store --k 3 --min-rows 2 \
+    --columns deps_demo/s4/columns.json --rows deps_demo/s4/rows.jsonl \
+    --left supplier --right name
+python -m mes_pipeline.cli deps-show --store ./store --calc-id demo-s1
+python -m mes_pipeline.cli deps-bench --k 3 --min-rows 2 \
+    --columns deps_bench/columns.json --rows deps_bench/rows.jsonl
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from .config import PipelineConfig
 from .pipeline import Pipeline
@@ -226,6 +244,153 @@ def cmd_lineage_recall(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# 单表依赖发现与规则核查（deps）
+# --------------------------------------------------------------------------- #
+# 退出码：0 完成 / 2 结果不存在 / 4 资料、参数或规则不合法 / 7 规模超限
+_DEPS_EXIT = {
+    "OK": 0,
+    "INVALID_INPUT": 4,
+    "SCALE_EXCEEDED": 7,
+}
+
+
+def _deps_args(args: argparse.Namespace) -> dict:
+    return {
+        "columns": args.columns,
+        "rows": args.rows,
+        "k": args.k,
+        "min_rows": args.min_rows,
+        "null_policy": args.null_policy,
+    }
+
+
+def cmd_deps_discover(args: argparse.Namespace) -> int:
+    from .deps import service
+
+    result = service.discover_table(
+        columns_path=args.columns, rows_path=args.rows,
+        k=args.k, min_rows=args.min_rows, null_policy=args.null_policy,
+        store_dir=args.store, calc_id=args.calc_id,
+        include_rows=args.include_column_rows,
+    )
+    if args.output:
+        Path(args.output).write_text(
+            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _DEPS_EXIT.get(result.get("status"), 1)
+
+
+def cmd_deps_check(args: argparse.Namespace) -> int:
+    from .deps import service
+    from .deps.engine import RuleError
+    from .deps.io import DepsInputError, DepsParameterError, ScaleExceeded
+
+    try:
+        result = service.check_rule(
+            columns_path=args.columns, rows_path=args.rows,
+            k=args.k, min_rows=args.min_rows, null_policy=args.null_policy,
+            key_columns=args.key if args.key else None,
+            left=args.left, right=args.right,
+            store_dir=args.store, calc_id=args.calc_id,
+        )
+    except (RuleError, DepsInputError, DepsParameterError) as exc:
+        print(json.dumps({"status": "INVALID_INPUT",
+                          "errors": list(exc.problems),
+                          "verdict": None, "counterexample": None},
+                         ensure_ascii=False, indent=2))
+        return 4
+    except ScaleExceeded as exc:
+        print(json.dumps({"status": "SCALE_EXCEEDED",
+                          "errors": list(exc.problems)},
+                         ensure_ascii=False, indent=2))
+        return 7
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _DEPS_EXIT.get(result.get("status"), 1)
+
+
+def cmd_deps_explain(args: argparse.Namespace) -> int:
+    from .deps import service
+    from .deps.engine import RuleError
+    from .deps.io import DepsInputError, DepsParameterError, ScaleExceeded
+
+    try:
+        result = service.explain_rule(
+            columns_path=args.columns, rows_path=args.rows,
+            left=args.left or [], right=args.right,
+            k=args.k, min_rows=args.min_rows, null_policy=args.null_policy,
+        )
+    except (RuleError, DepsInputError, DepsParameterError) as exc:
+        print(json.dumps({"status": "INVALID_INPUT",
+                          "errors": list(exc.problems)},
+                         ensure_ascii=False, indent=2))
+        return 4
+    except ScaleExceeded as exc:
+        print(json.dumps({"status": "SCALE_EXCEEDED",
+                          "errors": list(exc.problems)},
+                         ensure_ascii=False, indent=2))
+        return 7
+    print(json.dumps({"status": "OK", **result}, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_deps_bench(args: argparse.Namespace) -> int:
+    """对生成样本实测发现耗时与最高内存，并把结论写入结果文件。"""
+    import time
+
+    from .deps import service
+
+    started = time.perf_counter()
+    result = service.discover_table(
+        columns_path=args.columns, rows_path=args.rows,
+        k=args.k, min_rows=args.min_rows, null_policy=args.null_policy,
+        store_dir=args.store, calc_id=args.calc_id,
+    )
+    elapsed = time.perf_counter() - started
+    try:
+        import resource
+        peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        peak_mb = round(peak_kb / 1024, 1)
+        basis = ("Linux ru_maxrss 单位为 KiB，取进程整个生命周期的最高值；"
+                 "包含解释器与依赖本身")
+    except ImportError:  # pragma: no cover - 非 POSIX
+        peak_mb = None
+        basis = "该平台不提供 ru_maxrss，未记录最高内存"
+    payload = {
+        "status": result.get("status"),
+        "calc_id": result.get("calc_id"),
+        "columns_file": args.columns,
+        "rows_file": args.rows,
+        "k": args.k,
+        "min_rows": args.min_rows,
+        "null_policy": args.null_policy,
+        "elapsed_seconds": round(elapsed, 2),
+        "peak_memory_mb": peak_mb,
+        "peak_memory_basis": basis,
+        "row_count": result.get("row_count"),
+        "column_count": result.get("column_count"),
+        "unique_key_count": len(result.get("unique_keys") or []),
+        "functional_dependency_count": len(
+            result.get("functional_dependencies") or []),
+        "complete": result.get("complete"),
+        "stats": result.get("stats"),
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return _DEPS_EXIT.get(result.get("status"), 1)
+
+
+def cmd_deps_show(args: argparse.Namespace) -> int:
+    from .deps import service
+
+    try:
+        result = service.load_result(args.store, args.calc_id)
+    except KeyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _DEPS_EXIT.get(result.get("status"), 0)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mes_pipeline", description="MES 流程分析管线")
     parser.add_argument("--config", default=None,
@@ -308,6 +473,66 @@ def build_parser() -> argparse.ArgumentParser:
     p_lr.add_argument("--suspect", action="append", required=True,
                       help="可疑外购批 ID，可重复传入多个")
     p_lr.set_defaults(func=cmd_lineage_recall)
+
+    p_dd = sub.add_parser(
+        "deps-discover",
+        help="单表依赖发现：求最小唯一键与最小函数依赖（覆盖全部列组合）")
+    p_dd.add_argument("--columns", required=True, help="列清单 JSON")
+    p_dd.add_argument("--rows", required=True, help="逐行 JSONL 文件")
+    p_dd.add_argument("--k", type=int, required=True,
+                      help="最大组合长度（1..列数）")
+    p_dd.add_argument("--min-rows", type=int, default=2,
+                      help="证据门槛：参与行数少于它即证据不足（≥2）")
+    p_dd.add_argument("--null-policy", choices=("equal", "ignore"), default="equal",
+                      help="空值口径（默认 equal）")
+    p_dd.add_argument("--calc-id", default=None, help="可选：结果 ID")
+    p_dd.add_argument("--output", default=None, help="可选：把结果另存为 JSON 文件")
+    p_dd.add_argument("--include-column-rows", action="store_true",
+                      help="在结果中附每列每个取值的完整 row_id 列表（默认只给摘要）")
+    p_dd.set_defaults(func=cmd_deps_discover)
+
+    p_dc = sub.add_parser(
+        "deps-check",
+        help="规则核查：给定唯一键或单右部依赖，返回成立/违反/证据不足与反例")
+    p_dc.add_argument("--columns", required=True, help="列清单 JSON")
+    p_dc.add_argument("--rows", required=True, help="逐行 JSONL 文件")
+    p_dc.add_argument("--k", type=int, required=True, help="最大组合长度（1..列数）")
+    p_dc.add_argument("--min-rows", type=int, default=2, help="证据门槛（≥2）")
+    p_dc.add_argument("--null-policy", choices=("equal", "ignore"), default="equal")
+    p_dc.add_argument("--key", action="append", default=None,
+                      help="唯一键的列名，可重复传入以表示组合键")
+    p_dc.add_argument("--left", action="append", default=None,
+                      help="依赖左部列名，可重复；可省略表示空左部")
+    p_dc.add_argument("--right", default=None, help="依赖右部列名")
+    p_dc.add_argument("--calc-id", default=None, help="可选：结果 ID")
+    p_dc.set_defaults(func=cmd_deps_check)
+
+    p_de = sub.add_parser(
+        "deps-explain",
+        help="解释一条违反的依赖：加一列的核查结果与右部列真正的最小左部")
+    p_de.add_argument("--columns", required=True, help="列清单 JSON")
+    p_de.add_argument("--rows", required=True, help="逐行 JSONL 文件")
+    p_de.add_argument("--k", type=int, required=True, help="最大组合长度")
+    p_de.add_argument("--min-rows", type=int, default=2, help="证据门槛（≥2）")
+    p_de.add_argument("--null-policy", choices=("equal", "ignore"), default="equal")
+    p_de.add_argument("--left", action="append", default=None,
+                      help="依赖左部列名，可重复；省略表示空左部")
+    p_de.add_argument("--right", required=True, help="依赖右部列名")
+    p_de.set_defaults(func=cmd_deps_explain)
+
+    p_db = sub.add_parser(
+        "deps-bench", help="对生成样本实测依赖发现的耗时与最高内存")
+    p_db.add_argument("--columns", required=True, help="列清单 JSON")
+    p_db.add_argument("--rows", required=True, help="逐行 JSONL 文件")
+    p_db.add_argument("--k", type=int, required=True)
+    p_db.add_argument("--min-rows", type=int, default=2)
+    p_db.add_argument("--null-policy", choices=("equal", "ignore"), default="equal")
+    p_db.add_argument("--calc-id", default=None)
+    p_db.set_defaults(func=cmd_deps_bench)
+
+    p_ds = sub.add_parser("deps-show", help="按 ID 查看已保存的依赖发现/核查结果")
+    p_ds.add_argument("--calc-id", required=True)
+    p_ds.set_defaults(func=cmd_deps_show)
     return parser
 
 

@@ -1,0 +1,10 @@
+{
+  "table_id": "s3_evidence_gap",
+  "columns": [
+    "supplier",
+    "part",
+    "batch",
+    "cert",
+    "name"
+  ]
+}

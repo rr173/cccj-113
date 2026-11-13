@@ -33,10 +33,12 @@ mes_pipeline/
     └── service.py     # 装载、精确序列化、结果落盘/读取、构成查询与召回测算
 synthetic/
 ├── generate.py        # 确定性人工合成材料（覆盖九类场景）
-└── audit_demo.py      # 状态机逐行审计演示
+├── audit_demo.py      # 状态机逐行审计演示
+└── deps_generate.py   # 供货属性演示小表 + 12 列×20000 行规模样本
 charge_demo/           # 配料计算演示材料（七个场景）+ 独立复核脚本 verify.py
 grr_demo/              # 量具 R&R 演示材料（六个场景）+ 独立复核脚本 verify.py
 lineage_demo/          # 实耗批次谱系演示材料（五个场景）+ 独立复核脚本 verify.py
+deps_demo/             # 依赖发现/规则核查演示材料（八个场景）+ 独立复核脚本 verify.py
 tests/                 # 状态机/关联/端到端 + 配料 + 量具 R&R + 谱系测试
 ```
 
@@ -237,3 +239,48 @@ python3 -I -m mes_pipeline.cli --store $S lineage-recall \
 - `cross_check_with_pm4py` 断言两路结果完全相等，不一致即抛 `AssertionError`，
   报告的 `cross_check` 段记录核对结论与轨迹/事件总数；
 - 状态机的逐行转移可通过 `synthetic.audit_demo` 人工审计，每条违规都带原始行位置。
+
+## 10. 单表字段依赖发现与规则核查（deps）
+
+供应商物料属性宽表常常没有可靠主键。`deps` 只研究**一张表内部**字段值的对应
+关系（不合实体、不看加工先后、不做统计估计），回答「供应商编码 + 零件号能否
+认出一行」「同一零件号是否总对应同一名称」，并能对一条拟议规则直接给出反例。
+
+```bash
+# 生成演示材料（八个场景）与 12 列 × 20000 行规模样本
+.venv/bin/python -I -m synthetic.deps_generate --root deps_demo --scenario demo
+.venv/bin/python -I -m synthetic.deps_generate --root deps_bench --scenario bench
+
+S=/tmp/deps_store
+# 发现：1..k 全部列组合上的最小唯一键与最小函数依赖
+.venv/bin/python -I -m mes_pipeline.cli --store $S deps-discover \
+    --columns deps_demo/s1_composite_key/columns.json \
+    --rows deps_demo/s1_composite_key/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy equal --calc-id demo-s1
+# 核查任意键 / 任意单右部依赖（成立、违反或证据不足）
+.venv/bin/python -I -m mes_pipeline.cli --store $S deps-check \
+    --columns deps_demo/s2_null_policies/columns.json \
+    --rows deps_demo/s2_null_policies/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy ignore --left supplier --right name
+# 解释违反：加一列的核查结果 + 右部列真正的最小左部（原值不改）
+.venv/bin/python -I -m mes_pipeline.cli --store $S deps-explain \
+    --columns deps_demo/s4_violation_to_hold/columns.json \
+    --rows deps_demo/s4_violation_to_hold/rows.jsonl \
+    --k 3 --min-rows 2 --null-policy equal --left supplier --right name
+```
+
+口径要点：
+
+- 值域只有字符串或 null，空字符串是实际值；前导零/大小写/空格按字面保留；
+  少列、多列、重复 row_id、重复列名、其他值类型都**定位到行号与列名后整体拒绝**；
+- `equal` 把 null 当作有别的共同值；`ignore` 对每条规则单独选行（键排除键列含
+  null 的行，依赖排除左部或右部含 null 的行）；`min_rows` 参与数不足即证据不足；
+- 每条结果写明参与数、排除数与口径；**成立**只对本资料/口径/门槛负责，不是永久承诺；
+- 每条最小键/依赖附「删去任一左部列后」的核查摘要，说明更小组合为什么不够；
+- 发现先在索引上做组合搜索（`groups(X∪{A}) == groups(X)` 精确剔除冲突），对
+  需要定论的候选再逐行核实；覆盖全部组合、不抽样、不建全体行对；规模超限直接
+  拒绝且不标注为完整；
+- 反例固定取 `row_id` Unicode 序最小的行对，打乱资料顺序后结果与反例逐字节一致。
+
+演示材料的独立复核脚本（不调用生产搜索，用逐对枚举重算）：
+`.venv/bin/python -I deps_demo/verify.py verify-all`。详见 `deps_demo/README.md`。

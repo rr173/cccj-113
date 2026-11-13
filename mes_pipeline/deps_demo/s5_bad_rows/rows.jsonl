@@ -1,0 +1,5 @@
+{"row_id": "B-001", "values": {"supplier": "S1", "part": "P-01", "name": "轴承座", "grade": "A", "package": "BOX-1", "origin": "CN"}}
+{"row_id": "B-002", "values": {"supplier": "S1", "part": "P-02", "name": "端盖", "grade": "A", "origin": "CN"}}
+{"row_id": "B-003", "values": {"supplier": "S2", "part": "P-01", "name": "轴承座", "grade": "B", "package": "BOX-2", "origin": "CN", "warranty": "12m"}}
+{"row_id": "B-001", "values": {"supplier": "S9", "part": "P-09", "name": "重复行", "grade": "C", "package": "BOX-9", "origin": "VN"}}
+{"row_id": "B-005", "values": {"supplier": "S3", "part": "P-04", "name": "垫圈", "grade": 3, "package": "BOX-3", "origin": "CN"}}
