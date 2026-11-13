@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mes-pipeline"
+version = "0.1.0"
+description = "MES 导出包到流程分析表的 Python 管线（PM4Py 轨迹统计 + 独立状态机核对）"
+requires-python = ">=3.11"
+dependencies = [
+    "pm4py>=2.7",
+    "pandas>=2.0",
+]
+
+[tool.setuptools]
+packages = ["mes_pipeline", "synthetic"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
