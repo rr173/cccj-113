@@ -1,0 +1,9 @@
+{
+  "study_id": "GRR-S2",
+  "characteristic": "轴径",
+  "unit": "mm",
+  "parts": ["P1", "P2", "P3"],
+  "operators": ["OP-A", "OP-B"],
+  "repeats": 2,
+  "spec": {"lower": 9.8, "upper": 10.3}
+}

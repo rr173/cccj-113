@@ -21,11 +21,17 @@ mes_pipeline/
     ├── io.py          # 输入读取与校验：缺证书/冲突/负数/单位不明/缺化验一律拒绝
     ├── solver.py      # 纯 Python 两阶段单纯形 + 分支定界 MILP + 冲突约束集(IIS)
     └── service.py     # 建模求解、保守口径核算、结果落盘与读取
+└── gage/              # 量具 R&R（交叉型；只用零件×操作员×重复测量试验数据）
+    ├── models.py      # 试验定义/观测行值对象，mm/μm 统一换算到试验量纲
+    ├── io.py          # 输入校验：重复行/未声明/缺格/非有限/单位不兼容均拒绝
+    ├── anova.py       # 随机效应双因素 ANOVA（带交互）+ 方差分量 + GRR 指标
+    └── service.py     # 载入试验、计算、结果落盘与读取
 synthetic/
 ├── generate.py        # 确定性人工合成材料（覆盖九类场景）
 └── audit_demo.py      # 状态机逐行审计演示
 charge_demo/           # 配料计算演示材料（七个场景）+ 独立复核脚本 verify.py
-tests/                 # 85 个测试（状态机/关联/端到端 + 配料 io/求解器/端到端）
+grr_demo/              # 量具 R&R 演示材料（六个场景）+ 独立复核脚本 verify.py
+tests/                 # 129 个测试（状态机/关联/端到端 + 配料 + 量具 R&R）
 ```
 
 ## 2. 关键业务规则的落地方式
@@ -53,12 +59,12 @@ tests/                 # 85 个测试（状态机/关联/端到端 + 配料 io/�
 python3 -m venv .venv --without-pip          # 系统无 ensurepip 时
 .venv/bin/python get-pip.py
 .venv/bin/python -m pip install -e . pytest
-.venv/bin/python -I -m pytest tests/ -q      # 85 passed
+.venv/bin/python -I -m pytest tests/ -q      # 129 passed
 ```
 
 `-I` 隔离模式下仍可导入，因为项目以 editable 方式安装（pth 位于 site-packages）。
 
-## 4. 四个交付入口（CLI）
+## 4. 流程分析的四个交付入口（CLI）
 
 ```bash
 # 生成合成材料
@@ -126,7 +132,39 @@ Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 正确性另有 scipy/穷举对照（开发期一次性验证，不进交付依赖）。
 演示材料与计算口径详见 `charge_demo/README.md`。
 
-## 6. 合成材料覆盖的九类场景
+## 6. 量具 R&R（gage，交叉型）
+
+以**零件×操作员×重复测量**的试验数据为对象，把量具本身的波动（重复性）、
+操作员差异（再现性）与零件真实差异分开。输入为试验定义（`study.json`）与
+观测行（`observations.csv`），**不从工序轨迹或配料计算结果中推导样本**。
+
+```bash
+# 计算并保存（退出码：0 完成 / 4 输入不合法 / 6 设计不完整）
+.venv/bin/python -I -m mes_pipeline.cli --store data/store grr-run \
+    --study grr_demo/s1_interaction_kept/study.json \
+    --observations grr_demo/s1_interaction_kept/observations.csv \
+    --alpha 0.25 --calc-id demo-s1
+
+# 按试验 ID 查看该次结果（成功/部分成功/失败均可读）
+.venv/bin/python -I -m mes_pipeline.cli --store data/store grr-show --calc-id demo-s1
+```
+
+计算口径：
+
+- 只接受完整平衡交叉设计（≥3 零件、≥2 操作员、每格 ≥2 次重复）；
+  重复行/未声明人员或零件/缺格/非有限读数/不兼容单位说明位置并拒绝；
+- 带零件×操作员交互的随机效应双因素 ANOVA；交互检验以误差均方为分母，
+  `p < alpha` 保留交互，否则合并入误差重新估计；0/0 不可判定保守保留，
+  分母为零分子为正按显著处理；
+- 负方差分量保留原估计（`raw`），进入指标前各自独立截到零（`used`）；
+- 输出方差贡献率与 6σ 标准差比例（两种口径不混用）、规格占比与
+  ndc=⌊1.41·σ_零件/σ_GRR⌋；分母为零的比值明确标注不可定义及原因；
+- 长度支持 mm/μm 换算；行的排列不改变统计结果。
+
+演示材料、手工演算与独立复核（`grr_demo/verify.py`，不调用生产分析函数）
+详见 `grr_demo/README.md`。
+
+## 7. 合成材料覆盖的九类场景
 
 1. 缺失交接条码（`B-MISS`）与同产线歧义条码（`B-AMB1/B-AMB2` 共用 `BC-DUP`）
 2. OPEN 没有 CLOSE（`B-DANGLE` 的 CUT）
@@ -138,7 +176,7 @@ Python API 入口对应 `mes_pipeline.pipeline.Pipeline` 的
 8. 撤回一条中间事件（`WD-0001` 撤回 `B-WD` 的 CUT CLOSE，CUT OPEN 随之变悬空）
 9. 条码修正引发批次拆分（`BCFIX-0001` 后 `B-SPLIT` 与 `X-SPLIT2` 分离为两个合成批次）
 
-## 7. PM4Py 与状态机的核对关系
+## 8. PM4Py 与状态机的核对关系
 
 - `analysis.build_pm4py_dataframe` 把批次事件展平为 PM4Py 事件表
   （`case_id/activity/timestamp`），`convert_to_event_log` 后用 DFG discovery 与

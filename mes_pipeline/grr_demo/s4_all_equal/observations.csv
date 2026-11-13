@@ -1,0 +1,13 @@
+study_id,part_id,operator_id,repeat_id,value,unit
+GRR-S4,P1,OP-A,1,10.00,mm
+GRR-S4,P1,OP-A,2,10.00,mm
+GRR-S4,P1,OP-B,1,10.00,mm
+GRR-S4,P1,OP-B,2,10.00,mm
+GRR-S4,P2,OP-A,1,10.00,mm
+GRR-S4,P2,OP-A,2,10.00,mm
+GRR-S4,P2,OP-B,1,10.00,mm
+GRR-S4,P2,OP-B,2,10.00,mm
+GRR-S4,P3,OP-A,1,10.00,mm
+GRR-S4,P3,OP-A,2,10.00,mm
+GRR-S4,P3,OP-B,1,10.00,mm
+GRR-S4,P3,OP-B,2,10.00,mm

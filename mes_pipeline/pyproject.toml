@@ -10,10 +10,11 @@ requires-python = ">=3.11"
 dependencies = [
     "pm4py>=2.7",
     "pandas>=2.0",
+    "scipy>=1.10",
 ]
 
 [tool.setuptools]
-packages = ["mes_pipeline", "mes_pipeline.charge", "synthetic"]
+packages = ["mes_pipeline", "mes_pipeline.charge", "mes_pipeline.gage", "synthetic"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

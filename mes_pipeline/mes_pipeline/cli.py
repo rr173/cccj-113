@@ -15,6 +15,11 @@ python -m mes_pipeline.cli query    --config config.json --store ./store --set-i
 python -m mes_pipeline.cli charge-solve --store ./store \\
     --inventory inv.csv --assays assays.csv --certs certs.csv --heat heat.json
 python -m mes_pipeline.cli charge-show --store ./store --calc-id <calc_id>
+
+量具 R&R（输入为零件×操作员×重复测量的试验数据，与工序轨迹/配料无关）：
+python -m mes_pipeline.cli grr-run --store ./store \\
+    --study study.json --observations observations.csv --alpha 0.25
+python -m mes_pipeline.cli grr-show --store ./store --calc-id <calc_id>
 """
 from __future__ import annotations
 
@@ -136,6 +141,44 @@ def cmd_charge_show(args: argparse.Namespace) -> int:
     return _CHARGE_EXIT.get(result.get("status"), 0)
 
 
+# --------------------------------------------------------------------------- #
+# 量具 R&R（交叉型）
+# --------------------------------------------------------------------------- #
+# 退出码：0 计算完成（含个别统计量不可定义）/ 4 输入不合法 / 6 设计不完整
+_GRR_EXIT = {
+    "OK": 0,
+    "OK_PARTIAL": 0,
+    "INVALID_INPUT": 4,
+    "INCOMPLETE_DESIGN": 6,
+}
+
+
+def cmd_grr_run(args: argparse.Namespace) -> int:
+    from .gage import service  # 延迟导入，保持主管线启动轻量
+
+    result = service.run_study(
+        study=args.study,
+        observations=args.observations,
+        store_dir=args.store,
+        alpha=args.alpha,
+        calc_id=args.calc_id,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _GRR_EXIT.get(result["status"], 1)
+
+
+def cmd_grr_show(args: argparse.Namespace) -> int:
+    from .gage import service
+
+    try:
+        result = service.load_result(args.store, args.calc_id)
+    except KeyError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return _GRR_EXIT.get(result.get("status"), 0)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mes_pipeline", description="MES 流程分析管线")
     parser.add_argument("--config", default=None,
@@ -186,6 +229,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_ch = sub.add_parser("charge-show", help="查看某次配料计算结果")
     p_ch.add_argument("--calc-id", required=True)
     p_ch.set_defaults(func=cmd_charge_show)
+
+    p_gr = sub.add_parser("grr-run", help="量具 R&R：载入试验定义与观测行并分析")
+    p_gr.add_argument("--study", required=True, help="试验定义 JSON")
+    p_gr.add_argument("--observations", required=True, help="观测行 CSV")
+    p_gr.add_argument("--alpha", type=float, default=0.25,
+                      help="交互项检验水准（默认 0.25）")
+    p_gr.add_argument("--calc-id", default=None, help="可选：指定本次分析 ID")
+    p_gr.set_defaults(func=cmd_grr_run)
+
+    p_gs = sub.add_parser("grr-show", help="按试验 ID 查看某次量具 R&R 分析结果")
+    p_gs.add_argument("--calc-id", required=True)
+    p_gs.set_defaults(func=cmd_grr_show)
     return parser
 
 

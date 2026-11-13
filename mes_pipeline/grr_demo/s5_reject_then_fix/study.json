@@ -1,0 +1,9 @@
+{
+  "study_id": "GRR-S5",
+  "characteristic": "孔距",
+  "unit": "mm",
+  "parts": ["H1", "H2", "H3"],
+  "operators": ["OP-A", "OP-B"],
+  "repeats": 2,
+  "spec": {"lower": 19.85, "upper": 20.20}
+}
