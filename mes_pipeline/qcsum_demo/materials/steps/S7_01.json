@@ -1,0 +1,36 @@
+{
+  "batch_id": "S7-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L7",
+      "row": {
+        "lot_id": "L7",
+        "supplier": "戊",
+        "site": "S4"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L7b",
+      "row": {
+        "lot_id": "L7b",
+        "supplier": "戊",
+        "site": "S4"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "G1",
+      "row": {
+        "sample_id": "G1",
+        "lot_id": "L7",
+        "grade": "g",
+        "rejected_units": 1
+      }
+    }
+  ]
+}

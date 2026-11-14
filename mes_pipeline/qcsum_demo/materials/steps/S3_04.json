@@ -1,0 +1,27 @@
+{
+  "batch_id": "S3-B4",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "C3",
+      "row": {
+        "sample_id": "C3",
+        "lot_id": "L3",
+        "grade": "h",
+        "rejected_units": 5
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "C4",
+      "row": {
+        "sample_id": "C4",
+        "lot_id": "L3",
+        "grade": "h",
+        "rejected_units": 0
+      }
+    }
+  ]
+}

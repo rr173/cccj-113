@@ -1,0 +1,36 @@
+{
+  "batch_id": "S5-B2",
+  "ops": [
+    {
+      "op": "update",
+      "table": "lots",
+      "key": "L5",
+      "row": {
+        "lot_id": "L5",
+        "supplier": "乙",
+        "site": "S1"
+      }
+    },
+    {
+      "op": "delete",
+      "table": "samples",
+      "key": "E1"
+    },
+    {
+      "op": "delete",
+      "table": "samples",
+      "key": "E2"
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "E3",
+      "row": {
+        "sample_id": "E3",
+        "lot_id": "L5",
+        "grade": "r",
+        "rejected_units": 7
+      }
+    }
+  ]
+}

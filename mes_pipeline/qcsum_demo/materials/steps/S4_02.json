@@ -1,0 +1,16 @@
+{
+  "batch_id": "S4-B2",
+  "ops": [
+    {
+      "op": "update",
+      "table": "samples",
+      "key": "D1",
+      "row": {
+        "sample_id": "D1",
+        "lot_id": "L4b",
+        "grade": "g",
+        "rejected_units": 5
+      }
+    }
+  ]
+}

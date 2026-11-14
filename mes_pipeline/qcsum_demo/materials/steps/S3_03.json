@@ -1,0 +1,10 @@
+{
+  "batch_id": "S3-B3",
+  "ops": [
+    {
+      "op": "delete",
+      "table": "samples",
+      "key": "C2"
+    }
+  ]
+}

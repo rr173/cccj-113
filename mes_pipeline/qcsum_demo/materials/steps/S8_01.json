@@ -1,0 +1,26 @@
+{
+  "batch_id": "S8-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L8",
+      "row": {
+        "lot_id": "L8",
+        "supplier": "己",
+        "site": "S5"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "H1",
+      "row": {
+        "sample_id": "H1",
+        "lot_id": "L8",
+        "grade": "g",
+        "rejected_units": 9
+      }
+    }
+  ]
+}

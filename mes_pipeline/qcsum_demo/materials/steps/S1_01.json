@@ -1,0 +1,15 @@
+{
+  "batch_id": "S1-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L1",
+      "row": {
+        "lot_id": "L1",
+        "supplier": "甲",
+        "site": "S1"
+      }
+    }
+  ]
+}

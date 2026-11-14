@@ -1,0 +1,177 @@
+{
+  "scenarios": [
+    {
+      "scenario": "S1",
+      "title": "无样本批次加入首条和第二条样本",
+      "steps": [
+        {
+          "step": "建批次 L1（甲/S1），无样本 → 一条左连接占位行",
+          "file": "steps/S1_01.json",
+          "batch_id": "S1-B1"
+        },
+        {
+          "step": "首条样本 A1（grade=g1, rejected=3）",
+          "file": "steps/S1_02.json",
+          "batch_id": "S1-B2"
+        },
+        {
+          "step": "第二条样本 A2（grade=g2, rejected=null）",
+          "file": "steps/S1_03.json",
+          "batch_id": "S1-B3"
+        }
+      ]
+    },
+    {
+      "scenario": "S2",
+      "title": "同 grade 多样本逐条撤销",
+      "steps": [
+        {
+          "step": "建 L2（乙/S1）+ B1/B2 同 grade=x，B3 grade=y",
+          "file": "steps/S2_01.json",
+          "batch_id": "S2-B1"
+        },
+        {
+          "step": "撤销 B1：x 还剩一条，不同 grade 数不变",
+          "file": "steps/S2_02.json",
+          "batch_id": "S2-B2"
+        },
+        {
+          "step": "撤销 B2：x 最后一条离开，不同 grade 数减一",
+          "file": "steps/S2_03.json",
+          "batch_id": "S2-B3"
+        },
+        {
+          "step": "撤销 B3：批次回到无样本占位行",
+          "file": "steps/S2_04.json",
+          "batch_id": "S2-B4"
+        }
+      ]
+    },
+    {
+      "scenario": "S3",
+      "title": "null 数量与明确 0",
+      "steps": [
+        {
+          "step": "建 L3（丙/S2）+ C1 rejected=null → 和为 null",
+          "file": "steps/S3_01.json",
+          "batch_id": "S3-B1"
+        },
+        {
+          "step": "加入 C2 rejected=0 → 和为明确的 0",
+          "file": "steps/S3_02.json",
+          "batch_id": "S3-B2"
+        },
+        {
+          "step": "撤销 C2 → 和回到 null",
+          "file": "steps/S3_03.json",
+          "batch_id": "S3-B3"
+        },
+        {
+          "step": "加入 C3=5、C4=0 → 和为 5",
+          "file": "steps/S3_04.json",
+          "batch_id": "S3-B4"
+        }
+      ]
+    },
+    {
+      "scenario": "S4",
+      "title": "样本跨批次转移",
+      "steps": [
+        {
+          "step": "建 L4a（甲/S1）、L4b（乙/S1）+ D1 挂在 L4a",
+          "file": "steps/S4_01.json",
+          "batch_id": "S4-B1"
+        },
+        {
+          "step": "D1 改挂 L4b：两组的样本数/和/grade 数同步迁移",
+          "file": "steps/S4_02.json",
+          "batch_id": "S4-B2"
+        }
+      ]
+    },
+    {
+      "scenario": "S5",
+      "title": "批次更换分组且同批改样本",
+      "steps": [
+        {
+          "step": "建 L5（甲/S1）+ E1(p,1)、E2(q,2)",
+          "file": "steps/S5_01.json",
+          "batch_id": "S5-B1"
+        },
+        {
+          "step": "同批：L5 改归（乙/S1），删 E1/E2，加 E3(r,7) → 乙只计最终样本",
+          "file": "steps/S5_02.json",
+          "batch_id": "S5-B2"
+        }
+      ]
+    },
+    {
+      "scenario": "S6",
+      "title": "孤立样本先到、批次删除及重建",
+      "steps": [
+        {
+          "step": "F1 引用尚未到达的 L6 → 不进任何组",
+          "file": "steps/S6_01.json",
+          "batch_id": "S6-B1"
+        },
+        {
+          "step": "L6（丁/S3）到达 → F1 接回进组",
+          "file": "steps/S6_02.json",
+          "batch_id": "S6-B2"
+        },
+        {
+          "step": "删除 L6 → 组随之消失，F1 再次孤立",
+          "file": "steps/S6_03.json",
+          "batch_id": "S6-B3"
+        },
+        {
+          "step": "重建 L6 → F1 再次接回",
+          "file": "steps/S6_04.json",
+          "batch_id": "S6-B4"
+        }
+      ]
+    },
+    {
+      "scenario": "S7",
+      "title": "最后一个批次离组",
+      "steps": [
+        {
+          "step": "建 L7、L7b 同组（戊/S4）+ G1 挂 L7",
+          "file": "steps/S7_01.json",
+          "batch_id": "S7-B1"
+        },
+        {
+          "step": "删除 L7 → 组仍在（L7b 贡献占位行）",
+          "file": "steps/S7_02.json",
+          "batch_id": "S7-B2"
+        },
+        {
+          "step": "删除 L7b → 最后一个批次离组，整组删除",
+          "file": "steps/S7_03.json",
+          "batch_id": "S7-B3"
+        }
+      ]
+    },
+    {
+      "scenario": "S8",
+      "title": "同键先删后插形成净零变化",
+      "steps": [
+        {
+          "step": "建 L8（己/S5）+ H1(g,9)",
+          "file": "steps/S8_01.json",
+          "batch_id": "S8-B1"
+        },
+        {
+          "step": "同批删 H1 再插回完全相同行 → 汇总不变",
+          "file": "steps/S8_02.json",
+          "batch_id": "S8-B2"
+        },
+        {
+          "step": "同批删 L8 再插回完全相同行 → 样本接回，汇总不变",
+          "file": "steps/S8_03.json",
+          "batch_id": "S8-B3"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "batch_id": "S4-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L4a",
+      "row": {
+        "lot_id": "L4a",
+        "supplier": "甲",
+        "site": "S1"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L4b",
+      "row": {
+        "lot_id": "L4b",
+        "supplier": "乙",
+        "site": "S1"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "D1",
+      "row": {
+        "sample_id": "D1",
+        "lot_id": "L4a",
+        "grade": "g",
+        "rejected_units": 5
+      }
+    }
+  ]
+}

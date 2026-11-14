@@ -1,0 +1,48 @@
+{
+  "batch_id": "S2-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L2",
+      "row": {
+        "lot_id": "L2",
+        "supplier": "乙",
+        "site": "S1"
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "B1",
+      "row": {
+        "sample_id": "B1",
+        "lot_id": "L2",
+        "grade": "x",
+        "rejected_units": 1
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "B2",
+      "row": {
+        "sample_id": "B2",
+        "lot_id": "L2",
+        "grade": "x",
+        "rejected_units": 2
+      }
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "B3",
+      "row": {
+        "sample_id": "B3",
+        "lot_id": "L2",
+        "grade": "y",
+        "rejected_units": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "batch_id": "S6-B1",
+  "ops": [
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "F1",
+      "row": {
+        "sample_id": "F1",
+        "lot_id": "L6",
+        "grade": "g",
+        "rejected_units": 4
+      }
+    }
+  ]
+}

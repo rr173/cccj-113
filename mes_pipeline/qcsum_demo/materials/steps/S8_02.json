@@ -1,0 +1,21 @@
+{
+  "batch_id": "S8-B2",
+  "ops": [
+    {
+      "op": "delete",
+      "table": "samples",
+      "key": "H1"
+    },
+    {
+      "op": "insert",
+      "table": "samples",
+      "key": "H1",
+      "row": {
+        "sample_id": "H1",
+        "lot_id": "L8",
+        "grade": "g",
+        "rejected_units": 9
+      }
+    }
+  ]
+}

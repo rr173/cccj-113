@@ -1,0 +1,20 @@
+{
+  "batch_id": "S8-B3",
+  "ops": [
+    {
+      "op": "delete",
+      "table": "lots",
+      "key": "L8"
+    },
+    {
+      "op": "insert",
+      "table": "lots",
+      "key": "L8",
+      "row": {
+        "lot_id": "L8",
+        "supplier": "己",
+        "site": "S5"
+      }
+    }
+  ]
+}
