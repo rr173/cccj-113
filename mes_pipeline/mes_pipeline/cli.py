@@ -391,6 +391,19 @@ def cmd_deps_show(args: argparse.Namespace) -> int:
     return _DEPS_EXIT.get(result.get("status"), 0)
 
 
+# --------------------------------------------------------------------------- #
+# EDIFACT DESADV 发货通知接入（纯标准库子包，延迟导入）
+# --------------------------------------------------------------------------- #
+def cmd_desadv(args: argparse.Namespace) -> int:
+    from .desadv import cli as desadv_cli
+
+    # 把 --store 映射为 desadv 子命令期望的 --db，其余参数原样转发；
+    # REMAINDER 可能保留用户输入的分隔符 --，这里剥掉
+    forwarded_args = [a for a in args.desadv_argv if a != "--"]
+    forwarded = ["--db", str(Path(args.store) / "desadv.sqlite")] + forwarded_args
+    return desadv_cli.main(forwarded)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mes_pipeline", description="MES 流程分析管线")
     parser.add_argument("--config", default=None,
@@ -533,6 +546,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_ds = sub.add_parser("deps-show", help="按 ID 查看已保存的依赖发现/核查结果")
     p_ds.add_argument("--calc-id", required=True)
     p_ds.set_defaults(func=cmd_deps_show)
+
+    p_edi = sub.add_parser(
+        "desadv",
+        help="EDIFACT DESADV 接入：参数原样转发给 mes_pipeline.desadv.cli，"
+             "数据库固定为 <store>/desadv.sqlite；例如 "
+             "desadv -- desadv-import --file a.edi --block-size 7")
+    p_edi.add_argument("desadv_argv", nargs=argparse.REMAINDER,
+                       help="desadv 子命令及其参数（建议以 -- 分隔）")
+    p_edi.set_defaults(func=cmd_desadv)
     return parser
 
 

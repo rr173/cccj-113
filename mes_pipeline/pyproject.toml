@@ -14,7 +14,12 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["mes_pipeline", "mes_pipeline.charge", "mes_pipeline.gage", "mes_pipeline.lineage", "synthetic"]
+packages = ["mes_pipeline", "mes_pipeline.charge", "mes_pipeline.gage",
+            "mes_pipeline.lineage", "mes_pipeline.deps", "mes_pipeline.desadv",
+            "synthetic", "desadv_demo"]
+
+[project.scripts]
+mes-desadv = "mes_pipeline.desadv.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

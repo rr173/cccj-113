@@ -284,3 +284,43 @@ S=/tmp/deps_store
 
 演示材料的独立复核脚本（不调用生产搜索，用逐对枚举重算）：
 `.venv/bin/python -I deps_demo/verify.py verify-all`。详见 `deps_demo/README.md`。
+
+## 11. EDIFACT DESADV 发货通知接入（desadv，纯标准库）
+
+把供应商 DESADV 通知的**原始字节**流式抽取为可查询的包装层级与发货明细
+关系表（SQLite）。只做抽取、校验与落库，不做库存增减、采购订单管理或物料
+谱系计算，也不借用字段依赖发现猜规则；仅实现约定的 UTF-8 子集，未列出的段
+或结构一律拒绝。
+
+```bash
+# 生成演示材料（多通知/多交换/父包装后到/同零件跨箱/中文转义备注/逗号小数/坏文件/十万行）
+.venv/bin/python -I -m desadv_demo.generate --root desadv_demo/materials
+
+# 流式导入（块大小可调，验收用 1/2/7）；退出码 0 成功 / 4 拒绝 / 5 冲突
+.venv/bin/python -I -m mes_pipeline.desadv.cli --db desadv.sqlite \
+    desadv-import --file desadv_demo/materials/01_multi.edi --block-size 7
+.venv/bin/python -I -m mes_pipeline.desadv.cli --db desadv.sqlite desadv-list
+.venv/bin/python -I -m mes_pipeline.desadv.cli --db desadv.sqlite \
+    desadv-line --message-no MSG-1 --line-no L01          # 根→包装路径/数量/备注
+.venv/bin/python -I -m mes_pipeline.desadv.cli --db desadv.sqlite \
+    desadv-subtree --message-no MSG-1 --package P1        # 子树按零件+单位汇总
+.venv/bin/python -I -m mes_pipeline.desadv.cli --db desadv.sqlite \
+    desadv-slice --file <原文件> --start 261 --end 341     # 字节偏移切回原始段
+```
+
+口径要点：
+
+- 有界字节块流式读取，整文件不 read/split；中文字符、释放序列、UNA、段结束
+  符跨块均正确；1/2/7/常用块大小导入的业务表与来源偏移逐字节一致；
+- 只有未被释放的分隔符才切段/元素/组件，连续分隔与末尾空元素保留；无意义
+  释放与文件末尾悬空释放拒绝；段起止为**字节**偏移（左闭右开、含段结束符）；
+- 数量按当前交换小数符用 `Fraction` 精确解释，禁指数/混用/float；PCE、KGM
+  分别汇总、不相加不换算；子树汇总不乘包装件数、不重复计算祖先；
+- 交换为事务边界：UNZ/计数/层级/字段全过才 COMMIT，失败或提交前退出不留
+  半条通知；按发送方+接收方+交换号识别重传，同字节跳过、异字节冲突且旧资料
+  不动；支持 `--fault-inject-before-commit` 可重复故障注入；
+- 父包装允许后到，孤儿/自指/成环/重复包装号、消息号与通知单号重复均定位拒绝。
+
+独立复核（不调用生产查询函数）：
+`.venv/bin/python -I -m desadv_demo.verify --materials desadv_demo/materials --work /tmp/dv`。
+演示命令、手工核算与十万行实测见 `desadv_demo/README.md`。
